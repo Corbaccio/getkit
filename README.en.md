@@ -46,8 +46,12 @@ On Windows / Linux, install yt-dlp, gallery-dl and ffmpeg via pip or your packag
 ```bash
 git clone https://github.com/Corbaccio/getkit.git
 cd getkit
+./setup.sh          # macOS/Linux: detect & install deps (Windows: setup.ps1)
 python3 get.py
 ```
+
+> On first run, `get_config.json` is generated from `config.example.json` (Chrome cookies enabled by default).
+> If dependencies are missing, the program prints the install command for your OS at startup.
 
 Main menu:
 
@@ -134,7 +138,7 @@ The program loads it automatically via `--plugin-dirs <repo>/plugins`. The signi
 | Field | Meaning | Default |
 |---|---|---|
 | `output_dir` | Output directory | `Arsenal/` inside the repo |
-| `cookies_browser` | Cookie browser (empty = none) | `""` |
+| `cookies_browser` | Cookie browser (empty = none) | `"chrome"` |
 | `cookies_profile` | Profile name in manual mode | `"Default"` |
 | `auto_profile` | Auto-select Chrome profile per site | `true` |
 | `concurrency` | Concurrent fragments | `4` |

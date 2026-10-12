@@ -13,11 +13,21 @@ from typing import Any
 # 项目根目录（get.py 所在目录），getkit 位于其下
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_PATH = os.path.join(BASE_DIR, "get_config.json")
+EXAMPLE_CONFIG_PATH = os.path.join(BASE_DIR, "config.example.json")
 PLUGIN_DIR = os.path.join(BASE_DIR, "plugins")
 
 
 def default_output_dir() -> str:
     return os.path.join(BASE_DIR, "Arsenal")
+
+
+def _read_json(path: str) -> dict[str, Any]:
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
 
 
 @dataclass
@@ -33,14 +43,21 @@ class Config:
 
     @classmethod
     def load(cls) -> "Config":
-        data: dict[str, Any] = {}
-        if os.path.isfile(CONFIG_PATH):
-            try:
-                with open(CONFIG_PATH, encoding="utf-8") as f:
-                    data = json.load(f)
-            except (OSError, ValueError):
-                print("  [警告] 配置文件读取失败，已使用默认设置。")
         names = {f.name for f in dataclasses.fields(cls)}
+
+        if os.path.isfile(CONFIG_PATH):
+            data = _read_json(CONFIG_PATH)
+        elif os.path.isfile(EXAMPLE_CONFIG_PATH):
+            # 首次运行：根据样例生成 get_config.json
+            data = _read_json(EXAMPLE_CONFIG_PATH)
+            cfg = cls(**{k: v for k, v in data.items() if k in names})
+            cfg.save()
+            print("[提示] 未找到 get_config.json，已根据 config.example.json 生成。")
+            return cfg
+        else:
+            print("  [警告] 配置文件读取失败，已使用默认设置。")
+            data = {}
+
         return cls(**{k: v for k, v in data.items() if k in names})
 
     def save(self) -> None:

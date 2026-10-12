@@ -1,5 +1,5 @@
 {
-  "cookies_browser": "",
+  "cookies_browser": "chrome",
   "cookies_profile": "Default",
   "auto_profile": true,
   "concurrency": 4,

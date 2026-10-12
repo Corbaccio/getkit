@@ -46,8 +46,12 @@ Windows / Linux 请分别安装 yt-dlp、gallery-dl、ffmpeg（pip 或系统包�
 ```bash
 git clone https://github.com/Corbaccio/getkit.git
 cd getkit
+./setup.sh          # macOS/Linux：检测并安装依赖（Windows 用 setup.ps1）
 python3 get.py
 ```
+
+> 首次运行会自动根据 `config.example.json` 生成 `get_config.json`（默认已启用 Chrome cookies）。
+> 未装依赖时程序会在启动时给出对应系统的安装命令。
 
 首次运行会显示主菜单：
 
@@ -134,7 +138,7 @@ getkit/
 | 字段 | 含义 | 默认值 |
 |---|---|---|
 | `output_dir` | 输出目录 | 仓库内 `Arsenal/` |
-| `cookies_browser` | cookies 浏览器（空 = 不使用） | `""` |
+| `cookies_browser` | cookies 浏览器（空 = 不使用） | `"chrome"` |
 | `cookies_profile` | 手动模式下的 profile 名 | `"Default"` |
 | `auto_profile` | 是否按站点自动选择 Chrome profile | `true` |
 | `concurrency` | 并发分片数 | `4` |

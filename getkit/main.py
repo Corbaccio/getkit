@@ -11,10 +11,20 @@ from .settings import settings_flow
 from .tools import check_tools
 
 
+def startup_notice(cfg: Config) -> None:
+    """首次运行的显眼提示：cookies 未启用时给出引导。"""
+    if not cfg.cookies_browser:
+        print("-" * 46)
+        print("[提示] 当前未启用浏览器 cookies。")
+        print("       Instagram / 小红书 / 抖音等需要登录态，请在「设置 → cookies」")
+        print("       选择 Chrome（或其它浏览器）后再下载。")
+
+
 def main() -> None:
     check_tools()
     cfg = Config.load()
     ensure_output_dir(cfg)
+    startup_notice(cfg)
 
     while True:
         print("\n" + "=" * 46)
