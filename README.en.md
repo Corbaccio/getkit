@@ -86,6 +86,29 @@ getkit/
 └── Arsenal/                  # default output dir (ignored)
 ```
 
+## Download layout
+
+Downloads are archived by platform under the output directory (default `Arsenal/`):
+
+```
+Arsenal/
+├── YouTube/<title>.mp4
+├── Bilibili/<title>.mp4
+├── 小红书/<title>.mp4
+├── 抖音/
+│   ├── <video title>.mp4
+│   └── <caption>/              # image album: one folder per post
+├── Instagram/<username>/       # gallery-dl layout
+└── 其它/<title>                 # unknown platform
+```
+
+Organize existing loose files:
+
+```bash
+python3 organize.py            # preview the moves (dry-run)
+python3 organize.py --apply    # apply (move only; never deletes or renames)
+```
+
 ## Usage
 
 ### General

@@ -9,7 +9,7 @@ from ..cookies import cookie_args_for
 from ..engines import build_common_args
 from ..listing import ytdlp_list
 from ..prompts import ask, ask_selection, choose, fmt_duration
-from ..sites import plugin_args
+from ..sites import plugin_args, site_folder
 from ..tools import YTDLP
 from ..runner import run_command, run_tasks
 
@@ -57,9 +57,15 @@ def run(cfg: Config, urls: list[str]) -> None:
         playlist_ok = True
 
     common = build_common_args(cfg, playlist_ok)
-    if playlist_ok and "%(playlist_index)" not in cfg.filename_template:
-        # 播放列表自动加序号前缀，避免同名覆盖
-        common[common.index("-o") + 1] = "%(playlist_index)s - " + cfg.filename_template
+
+    def with_site(url: str) -> list[str]:
+        """在公共参数基础上，把输出模板加上站点目录前缀。"""
+        args = list(common)
+        idx = args.index("-o")
+        prefix = "%(playlist_index)s - " if (
+            playlist_ok and "%(playlist_index)" not in cfg.filename_template) else ""
+        args[idx + 1] = f"{site_folder(url)}/{prefix}{cfg.filename_template}"
+        return args
 
     subtitle_args: list[str] = []
     if mode in ("1", "2", "4", "6"):
@@ -76,7 +82,7 @@ def run(cfg: Config, urls: list[str]) -> None:
 
     if mode == "1":
         for url in urls:
-            tasks.append(("最佳画质", common + cookie_args_for(cfg, url) + subtitle_args
+            tasks.append(("最佳画质", with_site(url) + cookie_args_for(cfg, url) + subtitle_args
                           + ["--merge-output-format", "mp4", "-f", "bv*+ba/b", url]))
 
     elif mode == "2":
@@ -84,7 +90,7 @@ def run(cfg: Config, urls: list[str]) -> None:
         height = next(h for v, h, _ in RESOLUTIONS if v == choice)
         fmt = "wv*+wa/w" if height == "worst" else f"bv*[height<={height}]+ba/b[height<={height}]"
         for url in urls:
-            tasks.append((f"≤{height}p", common + cookie_args_for(cfg, url) + subtitle_args
+            tasks.append((f"≤{height}p", with_site(url) + cookie_args_for(cfg, url) + subtitle_args
                           + ["--merge-output-format", "mp4", "-f", fmt, url]))
 
     elif mode == "3":
@@ -92,7 +98,7 @@ def run(cfg: Config, urls: list[str]) -> None:
         audio_ext = next(ext for v, ext in AUDIO_FORMATS if v == choice)
         quality = ask("音频质量 0-9（0 最好，数字越小越好）", "0")
         for url in urls:
-            tasks.append((f"音频 {audio_ext}", common + cookie_args_for(cfg, url)
+            tasks.append((f"音频 {audio_ext}", with_site(url) + cookie_args_for(cfg, url)
                           + ["-x", "--audio-format", audio_ext, "--audio-quality", quality, url]))
 
     elif mode == "4":
@@ -104,12 +110,12 @@ def run(cfg: Config, urls: list[str]) -> None:
             fid = ask("输入要下载的格式编号（如 137+140；留空跳过此链接）")
             if not fid:
                 continue
-            tasks.append((f"格式 {fid}", common + cookie_args_for(cfg, url) + subtitle_args
+            tasks.append((f"格式 {fid}", with_site(url) + cookie_args_for(cfg, url) + subtitle_args
                           + ["--merge-output-format", "mp4", "-f", fid, url]))
 
     elif mode == "5":
         for url in urls:
-            tasks.append(("仅字幕", common + cookie_args_for(cfg, url) + [
+            tasks.append(("仅字幕", with_site(url) + cookie_args_for(cfg, url) + [
                 "--skip-download",
                 "--write-subs",
                 "--write-auto-subs",
@@ -125,17 +131,17 @@ def run(cfg: Config, urls: list[str]) -> None:
             if not items:
                 print("  未解析到任何条目，跳过。")
                 continue
-            base = common + cookie_args_for(cfg, url) + subtitle_args
+            head = with_site(url) + cookie_args_for(cfg, url) + subtitle_args
             if len(items) == 1:
                 print(f"  单条：{items[0]['title']}{fmt_duration(items[0]['duration'])}")
-                tasks.append(("条目", base + ["--merge-output-format", "mp4", "-f", "bv*+ba/b", url]))
+                tasks.append(("条目", head + ["--merge-output-format", "mp4", "-f", "bv*+ba/b", url]))
                 continue
             for i, item in enumerate(items, start=1):
                 print(f"  {i}. {item['title']}{fmt_duration(item['duration'])}")
             select = ask_selection(len(items))
             if select == "skip":
                 continue
-            args = base + ["--merge-output-format", "mp4", "-f", "bv*+ba/b"]
+            args = head + ["--merge-output-format", "mp4", "-f", "bv*+ba/b"]
             if select != "all":
                 args += ["-I", select]
             tasks.append((f"挑选 {select}", args + [url]))

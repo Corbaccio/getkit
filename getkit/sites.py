@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import os
 import re
+from urllib.parse import urlsplit
 
 from .config import PLUGIN_DIR
 
@@ -60,3 +61,24 @@ def normalize_url(url: str) -> str:
     if match:
         return f"https://www.douyin.com/video/{match.group(1)}"
     return url
+
+
+# 域名 -> 归档目录名（未命中归“其它”）
+SITE_FOLDERS: list[tuple[tuple[str, ...], str]] = [
+    (("youtube.com", "youtu.be"), "YouTube"),
+    (("bilibili.com", "b23.tv"), "Bilibili"),
+    (("xiaohongshu.com", "xhslink.com"), "小红书"),
+    (("instagram.com",), "Instagram"),
+    (("douyin.com", "iesdouyin.com"), "抖音"),
+]
+
+
+def site_folder(url: str) -> str:
+    """给定链接返回其归档目录名（如 YouTube / Bilibili / 抖音 / 其它）。"""
+    host = urlsplit(url).netloc.lower().split("@")[-1].split(":")[0]
+    if host.startswith("www."):
+        host = host[4:]
+    for domains, folder in SITE_FOLDERS:
+        if any(host == d or host.endswith("." + d) for d in domains):
+            return folder
+    return "其它"

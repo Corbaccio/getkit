@@ -10,6 +10,7 @@ from ..engines import build_common_args
 from ..listing import entry_tag, ytdlp_list
 from ..prompts import ask_selection, choose, fmt_duration
 from ..runner import run_tasks
+from ..sites import site_folder
 
 
 def run(cfg: Config, urls: list[str]) -> None:
@@ -31,6 +32,9 @@ def run(cfg: Config, urls: list[str]) -> None:
     for url in urls:
         # -f b：图片与视频条目都能选中；--proxy ""：系统代理会让抖音 CDN 返回 403
         common = build_common_args(cfg, playlist_ok=True) + ["-f", "b", "--proxy", ""]
+        # 输出到 抖音/<作品文案>/（图集）或 抖音/（单视频），条目保留原标题
+        common[common.index("-o") + 1] = (
+            f"{site_folder(url)}/%(playlist_title&{{}}/|)s{cfg.filename_template}")
         cookie = cookie_args_for(cfg, url)
 
         if mode == "2":
