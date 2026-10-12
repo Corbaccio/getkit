@@ -1,0 +1,15 @@
+# 个人配置（含本机路径 / profile）
+get_config.json
+
+# 下载输出目录
+Arsenal/*
+!Arsenal/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# macOS
+.DS_Store

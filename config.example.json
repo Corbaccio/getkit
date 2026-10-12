@@ -1,0 +1,7 @@
+{
+  "cookies_browser": "",
+  "cookies_profile": "Default",
+  "auto_profile": true,
+  "concurrency": 4,
+  "filename_template": "%(title)s.%(ext)s"
+}
