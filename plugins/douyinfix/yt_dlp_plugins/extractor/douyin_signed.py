@@ -61,6 +61,27 @@ _DETAIL_HOSTS = (
     "https://www.douyin.com/aweme/v1/web/aweme/detail/",
 )
 
+# 官方播放端点：会 302 跳到当前可用的 CDN（比第三方 douyinvod 镜像更可靠）
+_DOUYIN_PLAY_PATH = "douyin.com/aweme/v1/play/"
+
+
+def _dedupe_mirrors(formats):
+    """每个清晰度抖音会返回多个 CDN 镜像，其中部分会 403。
+
+    优先保留官方 play 端点（/aweme/v1/play/，会跳转到可用 CDN），丢弃其余镜像，
+    避免 yt-dlp 抽到返回 403 的坏节点。
+    """
+    chosen = {}
+    order = []
+    for fmt in formats:
+        fmt_id = fmt.get("format_id")
+        if fmt_id not in chosen:
+            chosen[fmt_id] = fmt
+            order.append(fmt_id)
+        if _DOUYIN_PLAY_PATH in (fmt.get("url") or ""):
+            chosen[fmt_id] = fmt
+    return [chosen[fmt_id] for fmt_id in order]
+
 
 class DouyinSignedIE(DouyinIE):
     IE_NAME = "douyin:signed"
@@ -136,7 +157,7 @@ class DouyinSignedIE(DouyinIE):
 
             video = traverse_obj(image, ("video", {dict}))
             if video and traverse_obj(video, ("play_addr", "url_list", ..., {str})):
-                live = self._parse_aweme_video_app({
+                live = self._video_info({
                     "aweme_id": f"{aweme_id}_p{i}_live",
                     "video": video,
                     "desc": title,
@@ -146,6 +167,22 @@ class DouyinSignedIE(DouyinIE):
                 live["douyin_type"] = "live"
                 entries.append(live)
         return entries
+
+    # -- 视频格式修正 ------------------------------------------------------
+
+    def _video_info(self, detail):
+        """解析视频并把 CDN 镜像收敛到官方 play 端点，避免 403。"""
+        info = self._parse_aweme_video_app(detail)
+        formats = info.get("formats")
+        if formats:
+            fixed = []
+            for fmt in _dedupe_mirrors(formats):
+                headers = dict(fmt.get("http_headers") or {})
+                headers.setdefault("Referer", "https://www.douyin.com/")
+                fmt["http_headers"] = headers
+                fixed.append(fmt)
+            info["formats"] = fixed
+        return info
 
     # -- 主入口 ------------------------------------------------------------
 
@@ -168,4 +205,4 @@ class DouyinSignedIE(DouyinIE):
                 title = (detail.get("desc") or aweme_id).strip()
                 return self.playlist_result(entries, aweme_id, title)
 
-        return self._parse_aweme_video_app(detail)
+        return self._video_info(detail)
